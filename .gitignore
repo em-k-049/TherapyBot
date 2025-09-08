@@ -30,6 +30,7 @@ logs/
 # Environment variables
 .env.local
 .env.production
+.env
 
 # Docker
 .dockerignore
@@ -53,3 +54,43 @@ htmlcov/
 # Temporary files
 *.tmp
 *.temp
+# Mac system files
+.AppleDouble
+.LSOverride
+
+# Windows system files
+ehthumbs.db
+Desktop.ini
+
+# Backup files
+*.bak
+*.orig
+*.old
+*.backup
+
+# Archive files
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Coverage reports
+coverage.xml
+
+# Test output
+test-results/
+
+# Local configuration files
+*.local
+*.sublime-workspace
+*.sublime-project
+
+# Yarn
+.yarn/
+.pnp.*
+
+secrets/
