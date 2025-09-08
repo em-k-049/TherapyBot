@@ -1,0 +1,55 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite
+
+# Environment variables
+.env.local
+.env.production
+
+# Docker
+.dockerignore
+
+# Google Cloud Credentials
+secrets/gcp-credentials.json
+secrets/*.json
+!secrets/README.md
+!secrets/.gitkeep
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Testing
+.coverage
+.pytest_cache/
+htmlcov/
+
+# Temporary files
+*.tmp
+*.temp
