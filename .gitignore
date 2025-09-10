@@ -1,3 +1,4 @@
+
 # Dependencies
 node_modules/
 __pycache__/
@@ -94,3 +95,9 @@ test-results/
 .pnp.*
 
 secrets/
+venv/
+*.pyc
+__pycache__/
+*.sqlite3
+.env
+
