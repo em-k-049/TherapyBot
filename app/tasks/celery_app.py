@@ -1,10 +1,22 @@
 from celery import Celery
-import os
 
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+# Celery instance
+celery = Celery(
+    "therapybot",
+    broker="redis://localhost:6379/0",   # Redis broker
+    backend="redis://localhost:6379/0"   # Redis backend
+)
 
-celery_app = Celery("therapybot_tasks", broker=REDIS_URL, backend=REDIS_URL)
+# Optional config
+celery.conf.update(
+    task_serializer="json",
+    accept_content=["json"],
+    result_serializer="json",
+    timezone="UTC",
+    enable_utc=True,
+)
 
-@celery_app.task
-def add(x, y):
-    return x + y
+# Example task (you can add more later)
+@celery.task(name="app.tasks.celery_app.example_task")
+def example_task(message: str):
+    return f"Processed message: {message}"
