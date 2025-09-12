@@ -1,12 +1,14 @@
 from sqlalchemy.orm import Session
 from . import models
+import hashlib
+from datetime import datetime
 
 # ---------------------------
 # USERS
 # ---------------------------
-
-def create_user(db: Session, username: str, email: str, password_hash: str):
-    user = models.User(username=username, email=email, password_hash=password_hash)
+def create_user(db: Session, username: str, email: str, password: str):
+    hashed_password = hashlib.sha256(password.encode()).hexdigest()
+    user = models.User(username=username, email=email, password_hash=hashed_password)
     db.add(user)
     db.commit()
     db.refresh(user)
@@ -29,7 +31,6 @@ def delete_user(db: Session, user_id: int):
 # ---------------------------
 # SESSIONS
 # ---------------------------
-
 def create_session(db: Session, user_id: int):
     session = models.Session(user_id=user_id)
     db.add(session)
@@ -40,7 +41,6 @@ def create_session(db: Session, user_id: int):
 def end_session(db: Session, session_id: int):
     session = db.query(models.Session).filter(models.Session.id == session_id).first()
     if session:
-        from datetime import datetime
         session.ended_at = datetime.utcnow()
         db.commit()
         db.refresh(session)
@@ -53,7 +53,6 @@ def get_sessions_by_user(db: Session, user_id: int):
 # ---------------------------
 # MESSAGES
 # ---------------------------
-
 def add_message(db: Session, session_id: int, sender: str, content: str):
     msg = models.Message(session_id=session_id, sender=sender, content=content)
     db.add(msg)
@@ -67,7 +66,6 @@ def get_messages_by_session(db: Session, session_id: int):
 # ---------------------------
 # WELLNESS LOGS
 # ---------------------------
-
 def create_wellness_log(db: Session, user_id: int, mood: str, energy_level: int, notes: str = None):
     log = models.WellnessLog(user_id=user_id, mood=mood, energy_level=energy_level, notes=notes)
     db.add(log)

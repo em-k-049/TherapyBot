@@ -3,7 +3,9 @@ from sqlalchemy.orm import relationship, declarative_base
 
 Base = declarative_base()
 
-# Users table
+# ---------------------------
+# USERS
+# ---------------------------
 class User(Base):
     __tablename__ = "users"
 
@@ -13,26 +15,28 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     created_at = Column(TIMESTAMP, server_default=func.now())
 
-    # relationships
     sessions = relationship("Session", back_populates="user", cascade="all, delete-orphan")
     wellness_logs = relationship("WellnessLog", back_populates="user", cascade="all, delete-orphan")
 
 
-# Sessions table
+# ---------------------------
+# SESSIONS
+# ---------------------------
+# models.py
 class Session(Base):
     __tablename__ = "sessions"
-
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     started_at = Column(TIMESTAMP, server_default=func.now())
     ended_at = Column(TIMESTAMP)
 
-    # relationships
     user = relationship("User", back_populates="sessions")
     messages = relationship("Message", back_populates="session", cascade="all, delete-orphan")
 
 
-# Messages table
+# ---------------------------
+# MESSAGES
+# ---------------------------
 class Message(Base):
     __tablename__ = "messages"
 
@@ -42,11 +46,12 @@ class Message(Base):
     content = Column(Text, nullable=False)
     timestamp = Column(TIMESTAMP, server_default=func.now())
 
-    # relationships
     session = relationship("Session", back_populates="messages")
 
 
-# Wellness Logs table
+# ---------------------------
+# WELLNESS LOGS
+# ---------------------------
 class WellnessLog(Base):
     __tablename__ = "wellness_logs"
 
@@ -57,6 +62,4 @@ class WellnessLog(Base):
     notes = Column(Text)
     created_at = Column(TIMESTAMP, server_default=func.now())
 
-    # relationships
     user = relationship("User", back_populates="wellness_logs")
-
