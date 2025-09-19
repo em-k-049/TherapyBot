@@ -75,5 +75,15 @@ services:
       timeout: 5s
       retries: 3
 
+  ollama:
+    build:
+      context: ./ollama
+    volumes:
+      - ollama:/root/.ollama
+    ports:
+      - "11434:11434"
+    container_name: therapybot-ollama-1
+
 volumes:
   postgres_data:
+  ollama:
