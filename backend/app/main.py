@@ -8,6 +8,10 @@ from .services.metrics import get_metrics
 from .startup_checks import run_startup_checks
 import logging
 
+from fastapi import FastAPI, UploadFile, File, HTTPException, Response
+from .schemas import TTSRequest
+from .services import voice
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -31,6 +35,31 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
+
+# TTS-STT endpoint
+# In main.py, after your app is defined
+
+@app.post("/messages/stt")
+async def speech_to_text_endpoint(audio_file: UploadFile = File(...)):
+    try:
+        transcript = voice_service.transcribe_audio(audio_file)
+        return {"transcript": transcript}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error during transcription: {str(e)}")
+
+
+@app.post("/messages/tts")
+async def text_to_speech_endpoint(request: TTSRequest):
+    try:
+        audio_bytes = voice_service.synthesize_speech(request.text)
+        if not audio_bytes:
+            raise HTTPException(status_code=500, detail="Failed to generate audio.")
+
+        # Return the raw MP3 audio data with the correct media type
+        return Response(content=audio_bytes, media_type="audio/mpeg")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error during TTS conversion: {str(e)}")
+
 
 # Add audit logging middleware
 app.add_middleware(AuditMiddleware)

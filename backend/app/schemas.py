@@ -60,3 +60,7 @@ class TwoFASetup(BaseModel):
 
 class TwoFAVerify(BaseModel):
     otp_code: str
+
+class TTSRequest(BaseModel):
+    text: str
+    
