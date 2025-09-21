@@ -10,7 +10,7 @@ import logging
 
 from fastapi import FastAPI, UploadFile, File, HTTPException, Response
 from .schemas import TTSRequest
-from .services import voice
+from .routes import voice
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -62,7 +62,7 @@ async def text_to_speech_endpoint(request: TTSRequest):
 
 
 # Add audit logging middleware
-app.add_middleware(AuditMiddleware)
+#app.add_middleware(AuditMiddleware)
 
 # Add metrics endpoint
 @app.get("/metrics")

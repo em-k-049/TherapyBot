@@ -7,15 +7,21 @@ logger = logging.getLogger(__name__)
 
 class AIService:
     def __init__(self):
-        self.vertex_enabled = os.getenv("USE_VERTEX_AI", "true").lower() == "true"
-        self.ollama_url = os.getenv("OLLAMA_URL", "http://host.docker.internal:11434")
-        self.ollama_model = os.getenv("OLLAMA_MODEL", "llama2")
-        self.timeout = int(os.getenv("OLLAMA_TIMEOUT", "30"))
+        # Check if Vertex AI is explicitly disabled. If GCP_PROJECT_ID is not set, disable it.
+        self.vertex_enabled = os.getenv("GCP_PROJECT_ID") is not None
+        
+        # Correctly read the OLLAMA_URL from the .env file.
+        # The default value is now correct for our container-to-container setup.
+        self.ollama_url = os.getenv("OLLAMA_URL", "http://ollama:11434")
+        
+        # Updated the default model to llama3 to match our setup
+        self.ollama_model = os.getenv("OLLAMA_MODEL", "llama3")
+        self.timeout = int(os.getenv("OLLAMA_TIMEOUT", "300"))
         
     async def get_response(self, message: str) -> str:
         """Get AI response with Vertex AI primary, Ollama fallback"""
         
-        # Try Vertex AI first
+        # Try Vertex AI first if it's enabled
         if self.vertex_enabled:
             try:
                 response = await self._try_vertex_ai(message)
@@ -26,6 +32,7 @@ class AIService:
                 logger.warning(f"❌ Vertex AI failed: {e}")
         
         # Fallback to Ollama
+        logger.info("Attempting Ollama fallback...")
         try:
             response = await self._try_ollama(message)
             logger.info("✅ Ollama fallback successful")
@@ -39,7 +46,7 @@ class AIService:
         try:
             from .vertex_ai import get_vertex_client
             client = get_vertex_client()
-            if not client.model:
+            if not client or not client.model:
                 raise Exception("Vertex AI not initialized")
             
             response = client.generate_response(message)
@@ -50,29 +57,41 @@ class AIService:
             raise Exception(f"Vertex AI error: {e}")
     
     async def _try_ollama(self, message: str) -> str:
-        """Try Ollama"""
-        prompt = f"You are a compassionate AI therapist. Respond with empathy and support. Keep responses to 2-3 sentences.\n\nUser: {message}\n\nTherapist:"
+        """Try Ollama using the correct /api/chat endpoint."""
         
         async with httpx.AsyncClient(timeout=self.timeout) as client:
-            response = await client.post(
-                f"{self.ollama_url}/api/generate",
-                json={
-                    "model": self.ollama_model,
-                    "prompt": prompt,
-                    "stream": False
-                }
-            )
-            
-            if response.status_code != 200:
-                raise Exception(f"Ollama HTTP {response.status_code}")
-            
-            data = response.json()
-            ai_response = data.get("response", "").strip()
-            
-            if not ai_response:
-                raise Exception("Empty Ollama response")
-            
-            return ai_response
+            try:
+                # CORRECT: Use the /api/chat endpoint
+                response = await client.post(
+                    f"{self.ollama_url}/api/chat",
+                    json={
+                        "model": self.ollama_model,
+                        # CORRECT: Use the 'messages' format for the payload
+                        "messages": [
+                            {"role": "system", "content": "You are a compassionate AI therapist. Respond with empathy and support. Keep responses to 2-3 sentences."},
+                            {"role": "user", "content": message}
+                        ],
+                        "stream": False
+                    }
+                )
+                response.raise_for_status() # Raises an exception for 4xx/5xx responses
+                
+                data = response.json()
+                
+                # CORRECT: Parse the response from the 'message' object
+                ai_response = data.get("message", {}).get("content", "").strip()
+                
+                if not ai_response:
+                    raise Exception("Empty Ollama response")
+                
+                return ai_response
+
+            except httpx.HTTPStatusError as e:
+                logger.error(f"Ollama HTTP error: {e.response.status_code} - {e.response.text}")
+                raise Exception(f"Ollama HTTP {e.response.status_code}")
+            except Exception as e:
+                logger.error(f"An unexpected error occurred with Ollama: {e}")
+                raise e
 
 # Global instance
 _ai_service = None
