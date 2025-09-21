@@ -1,6 +1,8 @@
-FROM python:3.11-slim
+FROM pytorch/pytorch:2.2.2-cpu
 
 WORKDIR /app
+
+RUN python -m pip install --upgrade pip
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
