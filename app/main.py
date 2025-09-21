@@ -1,12 +1,72 @@
-from fastapi import FastAPI, Depends, HTTPException
+
+from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
+import hashlib
+import jwt
+import datetime
 from app.db import crud, models
 from app.db.database import get_db
 from app.db.redis_client import redis_client
 from app.tasks.celery_app import celery, example_task
 
+
+from fastapi.middleware.cors import CORSMiddleware
+
+
+
 app = FastAPI(title="TherapyBot API")
+
+# Allow CORS for frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
+
+# ---------------------------
+# Auth
+# ---------------------------
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+# JWT secret and algorithm
+JWT_SECRET = "your-secret-key"  # Change this to a secure value in production
+JWT_ALGORITHM = "HS256"
+
+@app.post("/auth/login")
+def login(request: LoginRequest, db: Session = Depends(get_db)):
+    user = crud.get_user_by_username(db, request.username)
+    if not user:
+        return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={"detail": "Invalid username or password"})
+    hashed_pw = hashlib.sha256(request.password.encode()).hexdigest()
+    if user.password_hash != hashed_pw:
+        return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={"detail": "Invalid username or password"})
+    # Create JWT token
+    payload = {
+        "sub": user.username,
+        "role": getattr(user, 'role', 'patient'),
+        "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=12)
+    }
+    token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+    if isinstance(token, bytes):
+        token = token.decode('utf-8')
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email
+        }
+    }
+
+
 
 # ---------------------------
 # Pydantic models
@@ -42,7 +102,7 @@ def read_root():
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
     if crud.get_user_by_email(db, email=user.email):
         raise HTTPException(status_code=400, detail="Email already registered")
-    if crud.get_user_by_id(db, user_id=user.username):
+    if crud.get_user_by_username(db, username=user.username):
         raise HTTPException(status_code=400, detail="Username already taken")
     return crud.create_user(db, user.username, user.email, user.password)
 
