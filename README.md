@@ -119,4 +119,4 @@ cd frontend; npm install; npm start
 - Backend routes and business logic: `backend/app/`.
 - Frontend dashboard and components: `frontend/src/components/` (primary: `Dashboard.js`).
 - AI setup and troubleshooting: `docs/AI_SETUP_GUIDE.md`, `scripts/setup-vertex-ai.sh`.
-- Deployment and infra: `docker-compose*.yml`, `infra/`, `nginx/`.
+- Deployment and infra: `docker-compose*.yml`, `infra/`, `nginx/`.# TherapyBot
