@@ -33,6 +33,7 @@ services:
       - ENCRYPTION_SALT=${ENCRYPTION_SALT}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
     volumes:
+      - ./backend:/app
       - type: bind
         source: ./secrets
         target: /app/secrets
@@ -76,10 +77,9 @@ services:
       retries: 3
 
   ollama:
-    build:
-      context: ./ollama
+    image: ollama/ollama
     volumes:
-      - ollama:/root/.ollama
+      - ~/.ollama:/root/.ollama
     ports:
       - "11434:11434"
     container_name: therapybot-ollama-1
